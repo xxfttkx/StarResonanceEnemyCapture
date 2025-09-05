@@ -1,0 +1,102 @@
+syntax = "proto3";
+
+message AoiSyncDelta {
+    optional int64 Uuid = 1;
+    optional AttrCollection Attrs = 2;
+    optional TempAttrCollection TempAttrs = 3;
+    optional EventDataList EventDataList = 4;
+    optional BulletEvent BulletEvent = 5;
+    optional ActorBodyPartInfos BodyPartInfos = 6;
+    optional SkillEffect SkillEffects = 7;
+    optional SeqPassiveSkillInfo PassiveSkillInfos = 8;
+    optional SeqPassiveSkillEndInfo PassiveSkillEndInfos = 9;
+    optional BuffInfoSync BuffInfos = 10;
+    optional BuffEffectSync BuffEffect = 11;
+    repeated FakeBulletInfo FakeBullets = 12;
+    repeated MagneticRideQueueChangeInfo MagneticRideQueueChangeInfoList = 13;
+}
+
+message SyncNearDeltaInfo {
+    repeated AoiSyncDelta DeltaInfos = 1;
+}
+
+message SyncNearEntities {
+  repeated Entity Appear = 1;
+  repeated DisappearEntity Disappear = 2;
+}
+
+message Entity {
+  int64 Uuid = 1;
+  EEntityType EntType = 2;
+  AttrCollection Attrs = 3;
+  TempAttrCollection TempAttrs = 4;
+  ActorBodyPartInfos BodyPartInfos = 5;
+  SeqPassiveSkillInfo PassiveSkillInfos = 6;
+  BuffInfoSync BuffInfos = 7;
+  BuffEffectSync BuffEffect = 8;
+  EAppearType AppearType = 9;
+  map<int64, MagneticQueueAppearInfo> MagneticRideQueueChangeInfoDict = 10;
+}
+
+message DisappearEntity {
+  int64 Uuid = 1;
+  EDisappearType Type = 2;
+}
+
+
+// ==== 占位定义 ====
+message AttrCollection {
+    optional int64 Uuid = 1;
+    repeated Attr Attrs = 2;
+    repeated MapAttr MapAttrs = 3;
+}
+message Attr {
+    optional int32 Id = 1;
+    optional bytes RawData = 2;
+}
+message MapAttr {
+    optional bool IsClear = 1;
+    optional int32 Id = 2;
+    repeated MapAttrValue Attrs = 3;
+}
+message MapAttrValue {
+    optional bool IsRemove = 1;
+    optional bytes Key = 2;
+    optional bytes Value = 3;
+}
+message TempAttrCollection {}
+message EventDataList {}
+message BulletEvent {}
+message ActorBodyPartInfos {}
+message SeqPassiveSkillInfo {}
+message SeqPassiveSkillEndInfo {}
+message BuffInfoSync {}
+message SkillEffect {
+    optional int64 Uuid = 1;
+    repeated SyncDamageInfo Damages = 2;
+    optional int64 TotalDamage = 3;
+}
+message FakeBulletInfo {}
+message MagneticRideQueueChangeInfo {}
+
+// 占位 message
+message BuffEffectSync {}
+message MagneticQueueAppearInfo {}
+message SyncDamageInfo {}
+
+// 占位 enum
+enum EEntityType {
+  EEntityType_UNKNOWN = 0;
+}
+
+enum EAppearType {
+  EAppearType_UNKNOWN = 0;
+}
+
+enum EDisappearType {
+  EDisappearType_UNKNOWN = 0;
+}
+
+message AttrIdValue {
+    optional int32 value = 1;
+}
