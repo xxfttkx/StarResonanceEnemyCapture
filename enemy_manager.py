@@ -51,4 +51,6 @@ class EnemyManager:
             enemy['max_hp'] = max_hp
         self.enemies[id] = enemy
         if 'name' in enemy and 'hp' in enemy and 'max_hp' in enemy:
-            self.logger.info(f"同步敌人数据: {id} -> {enemy['name']}, HP: {enemy['hp']}/{enemy['max_hp']}")
+            monsters = {"丛林哥布林战士"}
+            if enemy['name'] in monsters:
+                self.logger.info(f"同步敌人数据: {id} -> {enemy['name']}, HP: {enemy['hp']}/{enemy['max_hp']}")

@@ -64,21 +64,6 @@ class PacketParser:
         with open("monster_names.json", "r", encoding="utf-8") as f:
             self.monster_names = json.load(f)
 
-    
-
-
-    
-    def parse_module_info(self, v_data: Any): #CharSerialize
-        """
-        解析模组信息
-
-        Args:
-            v_data: VData数据
-        """
-        self.logger.info("开始解析模组")
-        
-        mod_infos = v_data.Mod.ModInfos
-
     def parse_SyncNearEntities(self, data):
         for entity in data.Appear:
             self.parse_AoiSyncDelta(entity)
