@@ -76,7 +76,7 @@ class StarResonanceMonitor:
             logger.info("网络接口: 自动")
         
         # 启动抓包
-        self.packet_capture.start_capture(self._on_sync_container_data)
+        self.packet_capture.start_capture(self._on_callback)
         
         
         logger.info("监控已启动")
@@ -90,6 +90,14 @@ class StarResonanceMonitor:
 
     def _on_callback(self, data: Dict[str, Any]):
         try:
+            if "SyncNearDeltaInfo" in data:
+                sync_data = data["SyncNearDeltaInfo"]
+                self.packet_parser.parse_SyncNearDeltaInfo(sync_data)
+            if "SyncNearEntities" in data:
+                sync_data = data["SyncNearEntities"]
+                self.packet_parser.parse_SyncNearEntities(sync_data)
+            if "server_change" in data:
+                self.enemy_manager.clearAll()
             enemy_uid = data.get('enemy_uid')
             enemy_name = data.get('enemy_name')
             enemy_hp = data.get('enemy_hp')
@@ -103,28 +111,6 @@ class StarResonanceMonitor:
                 )
         except Exception as e:
             logger.error(f"Exception: {e}")
-
-    def _on_sync_container_data(self, data: Dict[str, Any]):
-        """处理SyncContainerData数据包"""
-        self.stats['sync_container_packets'] += 1
-        
-        try:
-            # 解析模组信息
-            if "SyncNearDeltaInfo" in data:
-                sync_data = data["SyncNearDeltaInfo"]
-                self.packet_parser.parse_SyncNearDeltaInfo(sync_data)
-            if "SyncNearEntities" in data:
-                sync_data = data["SyncNearEntities"]
-                self.packet_parser.parse_SyncNearEntities(sync_data)
-            v_data = data.get('v_data')
-            if v_data:
-                print(f"收到SyncContainerData数据包: {json.dumps(v_data, ensure_ascii=False)}")
-                    
-        except Exception as e:
-            logger.error(f"处理数据包失败: {e}")
-            
-
-            
 
 def main():
     """主函数"""
@@ -203,6 +189,14 @@ def main():
         
         # 等待模组解析完成
         logger.info("开始监控喵~")
+
+        # 启动后台线程
+        def periodic_task():
+            while True:
+                time.sleep(10)
+                logger.info("定时输出：10 秒过去了喵~")
+        t = threading.Thread(target=periodic_task, daemon=True)
+        t.start()
         
         while monitor.is_running:
             time.sleep(0.1)  # 更频繁的检查，减少延迟

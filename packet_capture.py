@@ -173,6 +173,7 @@ class PacketCapture:
                     self.current_server = src_server
                     self._clear_tcp_cache()
                     self.tcp_next_seq = seq + len(payload)
+                    self.callback({'server_change':None})
                     logger.info(f'识别到游戏服务器: {src_server}')
                 else:
                     return  # 不是游戏服务器，跳过
@@ -235,6 +236,7 @@ class PacketCapture:
                         
             if len(payload) == 0x62:
                 # 检查登录返回包特征
+                logger.info("检测到长度为0x62的包，尝试识别为登录返回包")
                 signature = b'\x00\x00\x00\x62\x00\x03\x00\x00\x00\x01'
                 if payload[:10] == signature and payload[14:20] == b'\x00\x00\x00\x00\x0a\x4e':
                     return True

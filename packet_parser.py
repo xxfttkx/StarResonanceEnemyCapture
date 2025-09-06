@@ -54,6 +54,9 @@ def read_string(data: bytes) -> str:
     length = read_varint(data)
     return data[1:1+length].decode("utf-8", errors="ignore")
 
+def is_uuid_monster(uuid: int) -> bool:
+    return (int(uuid) & 0xffff) == 64
+
 class PacketParser:
     """模组解析器"""
     
@@ -67,6 +70,11 @@ class PacketParser:
     def parse_SyncNearEntities(self, data):
         for entity in data.Appear:
             self.parse_AoiSyncDelta(entity)
+        for disappearEntity in data.Disappear:
+            uuid = disappearEntity.Uuid
+            if is_uuid_monster(uuid):
+                self.callback({"enemy_uid": uuid, "enemy_hp": 0})
+                self.logger.debug(f"Entity disappeared: {uuid}")
 
     def parse_SyncNearDeltaInfo(self, data):
         for delta in data.DeltaInfos:
@@ -74,8 +82,7 @@ class PacketParser:
     
     def parse_AoiSyncDelta(self, aoiSyncDelta):
         uuid = aoiSyncDelta.Uuid
-        def is_uuid_monster(uuid: int) -> bool:
-            return (int(uuid) & 0xffff) == 64
+        
         if is_uuid_monster(uuid):
             attrCollection = aoiSyncDelta.Attrs.Attrs
             self._process_enemy_attrs(uuid, attrCollection)
