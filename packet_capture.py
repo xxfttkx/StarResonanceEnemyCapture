@@ -88,6 +88,7 @@ class PacketCapture:
         self.tcp_last_time = 0
         self.tcp_lock = threading.Lock()
         self._data = b''
+        self.src_servers = {}
         
     def start_capture(self, callback: Callable[[Dict[str, Any]], None] = None):
         """
@@ -105,7 +106,10 @@ class PacketCapture:
         capture_thread = threading.Thread(target=self._capture_loop)
         capture_thread.daemon = True
         capture_thread.start()
-        
+
+        # 解析包线程
+        # threading.Thread(target=self._process_complete_packets, daemon=True).start()
+
         # 启动定时清理线程
         cleanup_thread = threading.Thread(target=self._cleanup_loop)
         cleanup_thread.daemon = True
@@ -168,6 +172,9 @@ class PacketCapture:
         """处理TCP流数据"""
         with self.tcp_lock:
             # 服务器识别逻辑
+            count = self.src_servers.get(src_server, 0)
+            count+=1
+            self.src_servers[src_server] = count
             if self.current_server != src_server:
                 if self._identify_game_server(payload):
                     self.current_server = src_server
@@ -183,11 +190,11 @@ class PacketCapture:
                 return
                 
             # TCP流重组逻辑
+            # logger.info(f"处理TCP流: {src_server}, seq={seq}, payload_length={len(payload)}")
             if self.tcp_next_seq == -1:
                 logger.error('TCP流重组错误: tcp_next_seq 为 -1')
                 if len(payload) > 4 and struct.unpack('>I', payload[:4])[0] < 0x0fffff:
                     self.tcp_next_seq = seq
-                return
                 
             # 缓存数据包
             if (self.tcp_next_seq - seq) <= 0 or self.tcp_next_seq == -1:
@@ -204,7 +211,7 @@ class PacketCapture:
                 
             # 处理完整的数据包
             # logger.info(f"处理TCP数据包: seq={seq}, next_seq={self.tcp_next_seq}, 缓存大小={len(self.tcp_cache)}, 当前数据长度={len(self._data)}")
-            self._process_complete_packets()
+            self._process_complete_packets()     
             
     def _identify_game_server(self, payload: bytes) -> bool:
         """识别游戏服务器"""
@@ -262,7 +269,9 @@ class PacketCapture:
                 if len(self._data) < packet_size:
                     break
                     
-                if packet_size > 0x0fffff:
+                if packet_size == 0 or packet_size > 0x0fffff:
+                    self._clear_tcp_cache()
+                    # self._data = self._data[4:]  # 丢掉长度字段
                     logger.error(f"无效的数据包长度: {packet_size}")
                     break
                     
@@ -274,7 +283,7 @@ class PacketCapture:
                 self._analyze_payload(packet, "TCP")
                 
             except Exception as e:
-                logger.debug(f"处理完整数据包失败: {e}")
+                logger.info(f"处理完整数据包失败: {e}")
                 break
             
     def _analyze_payload(self, payload: bytes, protocol: str):
@@ -463,14 +472,15 @@ class PacketCapture:
         """定时清理循环"""
         while self.is_running:
             try:
-                time.sleep(10)  # 每10秒清理一次
+                # break
+                time.sleep(3)  # 每10秒清理一次
                 self._cleanup_expired_cache()
             except Exception as e:
                 logger.debug(f"清理缓存时发生错误: {e}")
                 
     def _cleanup_expired_cache(self):
         """清理过期的缓存"""
-        FRAGMENT_TIMEOUT = 30  # 30秒超时
+        FRAGMENT_TIMEOUT = 3  # 30秒超时
         
         with self.tcp_lock:
             current_time = time.time()
@@ -490,5 +500,5 @@ class PacketCapture:
             # 检查连接超时
             if self.tcp_last_time and current_time - self.tcp_last_time > FRAGMENT_TIMEOUT:
                 logger.warning('无法捕获下一个数据包! 游戏是否已关闭或断开连接?seq: ' + str(self.tcp_next_seq))
-                self.current_server = ''
+                # self.current_server = ''
                 self._clear_tcp_cache()

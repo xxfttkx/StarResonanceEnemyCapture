@@ -4,6 +4,7 @@
 
 import json
 import logging
+import sys
 import time
 import threading
 import argparse
@@ -97,6 +98,8 @@ class StarResonanceMonitor:
                 sync_data = data["SyncNearEntities"]
                 self.packet_parser.parse_SyncNearEntities(sync_data)
             if "server_change" in data:
+                self.packet_capture.src_servers = {}
+                # self.packet_capture._clear_tcp_cache()
                 self.enemy_manager.clearAll()
             enemy_uid = data.get('enemy_uid')
             enemy_name = data.get('enemy_name')
@@ -193,8 +196,11 @@ def main():
         # 启动后台线程
         def periodic_task():
             while True:
-                time.sleep(10)
-                logger.info("定时输出：10 秒过去了喵~")
+                time.sleep(30)
+                logger.info("定时输出：30 秒过去了喵~")
+                for server, count in monitor.packet_capture.src_servers.items():
+                    if count>10:
+                        logger.info(f"服务器 {server} - 捕获数据包数: {count}")
         t = threading.Thread(target=periodic_task, daemon=True)
         t.start()
         
@@ -211,4 +217,5 @@ def main():
 if __name__ == "__main__":
     # 多进程打包支持
     mp.freeze_support()
+    sys.stdout.reconfigure(encoding='utf-8')
     main() 

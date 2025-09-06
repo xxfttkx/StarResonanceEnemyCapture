@@ -73,6 +73,7 @@ class PacketParser:
         for disappearEntity in data.Disappear:
             uuid = disappearEntity.Uuid
             if is_uuid_monster(uuid):
+                uuid = uuid>>16
                 self.callback({"enemy_uid": uuid, "enemy_hp": 0})
                 self.logger.debug(f"Entity disappeared: {uuid}")
 
@@ -82,8 +83,8 @@ class PacketParser:
     
     def parse_AoiSyncDelta(self, aoiSyncDelta):
         uuid = aoiSyncDelta.Uuid
-        
         if is_uuid_monster(uuid):
+            uuid = uuid>>16
             attrCollection = aoiSyncDelta.Attrs.Attrs
             self._process_enemy_attrs(uuid, attrCollection)
     
