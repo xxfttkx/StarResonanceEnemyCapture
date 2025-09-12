@@ -2,9 +2,12 @@
 主程序入口
 """
 
+
+import io
+import sys
+sys.stdout.reconfigure(encoding='utf-8')
 import json
 import logging
-import sys
 import time
 import threading
 import argparse
@@ -16,6 +19,7 @@ from logging_config import setup_logging, get_logger
 from packet_capture import PacketCapture
 from network_interface_util import get_network_interfaces, select_network_interface
 from packet_parser import PacketParser
+
 
 # 多进程保护
 _is_main_process = mp.current_process().name == 'MainProcess'
@@ -198,9 +202,9 @@ def main():
             while True:
                 time.sleep(30)
                 logger.info("定时输出：30 秒过去了喵~")
-                for server, count in monitor.packet_capture.src_servers.items():
-                    if count>10:
-                        logger.info(f"服务器 {server} - 捕获数据包数: {count}")
+                # for server, count in monitor.packet_capture.src_servers.items():
+                #     if count>10:
+                #         logger.info(f"服务器 {server} - 捕获数据包数: {count}")
         t = threading.Thread(target=periodic_task, daemon=True)
         t.start()
         
@@ -218,4 +222,12 @@ if __name__ == "__main__":
     # 多进程打包支持
     mp.freeze_support()
     sys.stdout.reconfigure(encoding='utf-8')
+    # 包装 sys.stdout，指定 utf-8
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        handlers=[logging.StreamHandler(sys.stdout)]
+    )
+    logger = logging.getLogger(__name__)
     main() 
